@@ -62,6 +62,14 @@ async function run(){
             res.send(result);
         });
 
+        app.delete('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const query = { _id: ObjectId(id) };
+            const result = await productCollection.deleteOne(query);
+            res.send(result);
+        })
+
         app.get('/bookings',verifyJWT, async (req,res)=>{
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
@@ -95,6 +103,13 @@ async function run(){
             const result = await bookingsCollection.insertOne(booking);
             res.send(result);
         });
+
+        app.delete('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await bookingsCollection.deleteOne(query);
+            res.send(result);
+        })
 
         app.get('/jwt', async(req,res)=>{
             const email = req.query.email;
