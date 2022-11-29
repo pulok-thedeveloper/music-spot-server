@@ -8,9 +8,6 @@ require('dotenv').config()
 
 const app = express();
 
-// musicSpotDBUser
-// 9eKEc23VHy2m7igs
-
 app.use(cors());
 app.use(express.json());
 
@@ -167,6 +164,25 @@ async function run(){
             const updatedDoc = {
                 $set:{
                     role: 'admin'
+                }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+          })
+
+          app.put('/users/seller/:id', verifyJWT, async(req, res) =>{
+            const decodedEmail = req.decoded.email;
+            const query = {email: decodedEmail};
+            const user = await userCollection.findOne(query);
+            if(user?.role !== 'admin'){
+                return res.status(403).send({message: 'forbidden access'})
+            }
+            const id = req.params.id;
+            const filter = {_id: ObjectId(id)}
+            const options = {upsert: true};
+            const updatedDoc = {
+                $set:{
+                    verifyStatus: 'verified'
                 }
             }
             const result = await userCollection.updateOne(filter, updatedDoc, options);
