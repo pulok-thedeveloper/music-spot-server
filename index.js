@@ -74,8 +74,12 @@ async function run(){
         })
 
 
-        app.post('/bookings', async (req, res) => {
+        app.post('/bookings',verifyJWT, async (req, res) => {
             const booking = req.body;
+            const decodedEmail = req.decoded.email;
+            if(booking.email !== decodedEmail){
+                return res.status(403).send({message: 'forbidden access'})
+            }
             console.log(booking);
             const query = {
                 productName: booking.productName,
@@ -141,7 +145,7 @@ async function run(){
             const email = req.params.email;
             const query = {email}
             const user = await userCollection.findOne(query);
-            res.send({isSeller: user?.role === 'seller'});
+            res.send(user);
           })
 
           app.get('/users/buyer/:email', async(req,res)=>{
