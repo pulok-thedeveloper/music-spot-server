@@ -15,6 +15,8 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.tftz42f.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+
+//Verify JWT TOKEN
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -33,17 +35,23 @@ function verifyJWT(req, res, next) {
 
 async function run() {
     try {
+        //Collections
         const productCollection = client.db('musicSpot').collection('products');
         const categoryCollection = client.db('musicSpot').collection('categories');
         const userCollection = client.db('musicSpot').collection('users');
         const bookingsCollection = client.db('musicSpot').collection('bookings');
 
+        //Category API
         app.get('/categories', async (req, res) => {
             const query = {};
             const categories = await categoryCollection.find(query).toArray();
             res.send(categories);
         })
-
+        
+        //Products API
+        //All Products
+        //Seller Wise Products
+        //Available Category Wise Products
         app.get('/products', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             let query = { email: decodedEmail };
@@ -67,6 +75,8 @@ async function run() {
             res.send(products);
         });
 
+        
+        //Advertided Products
         app.get('/advertised', async (req, res) => {
             const query = {
                 isAdvertise: true,
@@ -76,12 +86,20 @@ async function run() {
             res.send(products);
         })
 
-        app.post('/products', async (req, res) => {
+        //Add Product
+        app.post('/products',verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await userCollection.findOne(query);
+            if (user?.role !== 'seller') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
             const product = req.body;
             const result = await productCollection.insertOne(product);
             res.send(result);
         });
 
+        //Advertised Product
         app.put('/products/:id', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const query = { email: decodedEmail };
@@ -101,8 +119,7 @@ async function run() {
             res.send(result);
         })
 
-
-
+        //Delete Products
         app.delete('/products/:id', async (req, res) => {
             const id = req.params.id;
             console.log(id)
@@ -111,6 +128,7 @@ async function run() {
             res.send(result);
         })
 
+        //Bookings or My Orders API
         app.get('/bookings', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
@@ -122,7 +140,7 @@ async function run() {
             res.send(bookings)
         })
 
-
+        //Bookings or My Orders API POST
         app.post('/bookings', verifyJWT, async (req, res) => {
             const booking = req.body;
             const decodedEmail = req.decoded.email;
@@ -144,7 +162,9 @@ async function run() {
             const result = await bookingsCollection.insertOne(booking);
             res.send(result);
         });
+    
 
+        //Delete Bookings or My Orders API
         app.delete('/bookings/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -152,6 +172,7 @@ async function run() {
             res.send(result);
         })
 
+        //Jwt API
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
             const query = { email: email }
@@ -164,7 +185,7 @@ async function run() {
             res.status(403).send({ accessToken: '' })
         })
 
-
+        //POST Users
         app.post('/users', async (req, res) => {
             const user = req.body;
             const query = {
@@ -181,6 +202,7 @@ async function run() {
             res.send(result);
         });
 
+        //Get Users
         app.get('/users', async (req, res) => {
             let query = {};
             if (req.query.role) {
@@ -190,6 +212,7 @@ async function run() {
             res.send(users);
         });
 
+        //Get Admin
         app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email }
@@ -197,6 +220,7 @@ async function run() {
             res.send({ isAdmin: user?.role === 'admin' });
         })
 
+        //Get Seller
         app.get('/users/seller/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email }
@@ -204,6 +228,7 @@ async function run() {
             res.send(user);
         })
 
+        //Get Buyer
         app.get('/users/buyer/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email }
@@ -211,6 +236,7 @@ async function run() {
             res.send({ isBuyer: user?.role === 'buyer' });
         })
 
+        //MAKE Admin
         app.put('/users/admin/:id', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const query = { email: decodedEmail };
@@ -230,6 +256,7 @@ async function run() {
             res.send(result);
         })
 
+        //User Verify
         app.put('/users/seller/:id', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const query = { email: decodedEmail };
@@ -249,6 +276,7 @@ async function run() {
             res.send(result);
         })
 
+        //User Delete
         app.delete('/users/:id',verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             let query = { email: decodedEmail };
