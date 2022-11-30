@@ -141,6 +141,13 @@ async function run() {
             res.send(bookings)
         })
 
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const booking = await bookingsCollection.findOne(query);
+            res.send(booking);
+        })
+
         //Bookings or My Orders API POST
         app.post('/bookings', verifyJWT, async (req, res) => {
             const booking = req.body;
@@ -293,7 +300,7 @@ async function run() {
         });
 
         //Wishlist API POST
-        app.post('/wishlist',verifyJWT, async (req, res) => {
+        app.post('/wishlist', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             let query = { email: decodedEmail };
             const user = await userCollection.findOne(query);
@@ -314,7 +321,7 @@ async function run() {
                 const message = 'You have already added this product on your wishlist'
                 return res.send({ acknowledged: false, message })
             }
-            
+
             const result = await wishlistCollection.insertOne(wishlist);
             res.send(result);
         });
