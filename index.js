@@ -53,17 +53,25 @@ async function run() {
             }
             query = {};
             if (req.query.category) {
-                query = { category: req.query.category }
+                query = {
+                    category: req.query.category,
+                    status: 'available'
+                }
             }
             if (req.query.email) {
-                query = { email: req.query.email }
+                query = {
+                    email: req.query.email,
+                }
             }
             const products = await productCollection.find(query).toArray();
             res.send(products);
         });
 
         app.get('/advertised', async (req, res) => {
-            const query = {isAdvertise: true};
+            const query = {
+                isAdvertise: true,
+                status: 'available'
+            };
             const products = await productCollection.find(query).toArray();
             res.send(products);
         })
@@ -238,6 +246,20 @@ async function run() {
                 }
             }
             const result = await userCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+        app.delete('/users/:id',verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            let query = { email: decodedEmail };
+            const user = await userCollection.findOne(query);
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            const id = req.params.id;
+            console.log(id)
+            query = { _id: ObjectId(id) };
+            const result = await userCollection.deleteOne(query);
             res.send(result);
         })
 
