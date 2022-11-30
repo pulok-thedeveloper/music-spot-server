@@ -305,7 +305,7 @@ async function run() {
 
             query = {
                 productName: wishlist.productName,
-                userEmail: wishlist.userEmail
+                userEmail: decodedEmail
             }
 
             const alreadyAdded = await wishlistCollection.find(query).toArray();
