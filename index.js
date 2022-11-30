@@ -40,6 +40,7 @@ async function run() {
         const categoryCollection = client.db('musicSpot').collection('categories');
         const userCollection = client.db('musicSpot').collection('users');
         const bookingsCollection = client.db('musicSpot').collection('bookings');
+        const wishlistCollection = client.db('musicSpot').collection('wishlist');
 
         //Category API
         app.get('/categories', async (req, res) => {
@@ -47,7 +48,7 @@ async function run() {
             const categories = await categoryCollection.find(query).toArray();
             res.send(categories);
         })
-        
+
         //Products API
         //All Products
         //Seller Wise Products
@@ -75,7 +76,7 @@ async function run() {
             res.send(products);
         });
 
-        
+
         //Advertided Products
         app.get('/advertised', async (req, res) => {
             const query = {
@@ -87,7 +88,7 @@ async function run() {
         })
 
         //Add Product
-        app.post('/products',verifyJWT, async (req, res) => {
+        app.post('/products', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const query = { email: decodedEmail };
             const user = await userCollection.findOne(query);
@@ -162,7 +163,7 @@ async function run() {
             const result = await bookingsCollection.insertOne(booking);
             res.send(result);
         });
-    
+
 
         //Delete Bookings or My Orders API
         app.delete('/bookings/:id', async (req, res) => {
@@ -277,7 +278,7 @@ async function run() {
         })
 
         //User Delete
-        app.delete('/users/:id',verifyJWT, async (req, res) => {
+        app.delete('/users/:id', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             let query = { email: decodedEmail };
             const user = await userCollection.findOne(query);
@@ -289,6 +290,44 @@ async function run() {
             query = { _id: ObjectId(id) };
             const result = await userCollection.deleteOne(query);
             res.send(result);
+        });
+
+        //Wishlist API POST
+        app.post('/wishlist',verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            let query = { email: decodedEmail };
+            const user = await userCollection.findOne(query);
+            if (user?.role !== 'buyer') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            const wishlist = req.body;
+            console.log(wishlist);
+
+            query = {
+                productName: wishlist.productName,
+                userEmail: wishlist.userEmail
+            }
+
+            const alreadyAdded = await wishlistCollection.find(query).toArray();
+
+            if (alreadyAdded.length) {
+                const message = 'You have already added this product on your wishlist'
+                return res.send({ acknowledged: false, message })
+            }
+            
+            const result = await wishlistCollection.insertOne(wishlist);
+            res.send(result);
+        });
+
+        app.get('/wishlist', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            const query = { userEmail: email }
+            const wishlist = await wishlistCollection.find(query).toArray();
+            res.send(wishlist)
         })
 
 
